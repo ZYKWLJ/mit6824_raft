@@ -46,8 +46,8 @@ func (ck *Clerk) Get(key string) string {
 		Key: key,
 	}
 
-	var reply GetReply
 	for {
+		var reply GetReply
 		ok := ck.servers[ck.leaderId].Call("KVServer.Get", &args, &reply)
 		if !ok || reply.Err == ErrWrongLeader || reply.Err == ErrTimeout {
 			// 请求失败，选择另一个节点重试
@@ -76,8 +76,9 @@ func (ck *Clerk) PutAppend(key string, value string, op string) {
 		ClientId: ck.clientId,
 		SeqId:    ck.seqId,
 	}
-	var reply PutAppendReply
+
 	for {
+		var reply PutAppendReply
 		ok := ck.servers[ck.leaderId].Call("KVServer.PutAppend", &args, &reply)
 		if !ok || reply.Err == ErrWrongLeader || reply.Err == ErrTimeout {
 			// 请求失败，选择另一个节点重试
