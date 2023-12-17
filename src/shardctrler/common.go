@@ -22,15 +22,21 @@ import (
 // You will need to add fields to the RPC argument structs.
 //
 
-// The number of shards.
+// NShards The number of shards.
 const NShards = 10
 
-// A configuration -- an assignment of shards to groups.
+// Config A configuration -- an assignment of shards to groups.
 // Please don't change this.
 type Config struct {
 	Num    int              // config number
 	Shards [NShards]int     // shard -> gid
 	Groups map[int][]string // gid -> servers[]
+}
+
+func DefaultConfig() Config {
+	return Config{
+		Groups: make(map[int][]string),
+	}
 }
 
 const (

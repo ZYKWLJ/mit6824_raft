@@ -41,7 +41,7 @@ func (ck *Clerk) Query(num int) Config {
 		// try each known server.
 		var reply QueryReply
 		ok := ck.servers[ck.leaderId].Call("ShardCtrler.Query", args, &reply)
-		if !ok && reply.Err == ErrWrongLeader || reply.Err == ErrTimeout {
+		if !ok || reply.Err == ErrWrongLeader || reply.Err == ErrTimeout {
 			ck.leaderId = (ck.leaderId + 1) % len(ck.servers)
 			continue
 		}
@@ -57,7 +57,7 @@ func (ck *Clerk) Join(servers map[int][]string) {
 	for {
 		var reply JoinReply
 		ok := ck.servers[ck.leaderId].Call("ShardCtrler.Join", args, &reply)
-		if !ok && reply.Err == ErrWrongLeader || reply.Err == ErrTimeout {
+		if !ok || reply.Err == ErrWrongLeader || reply.Err == ErrTimeout {
 			ck.leaderId = (ck.leaderId + 1) % len(ck.servers)
 			continue
 		}
@@ -75,7 +75,7 @@ func (ck *Clerk) Leave(gids []int) {
 		// try each known server.
 		var reply LeaveReply
 		ok := ck.servers[ck.leaderId].Call("ShardCtrler.Leave", args, &reply)
-		if !ok && reply.Err == ErrWrongLeader || reply.Err == ErrTimeout {
+		if !ok || reply.Err == ErrWrongLeader || reply.Err == ErrTimeout {
 			ck.leaderId = (ck.leaderId + 1) % len(ck.servers)
 			continue
 		}
@@ -94,7 +94,7 @@ func (ck *Clerk) Move(shard int, gid int) {
 		// try each known server.
 		var reply MoveReply
 		ok := ck.servers[ck.leaderId].Call("ShardCtrler.Move", args, &reply)
-		if !ok && reply.Err == ErrWrongLeader || reply.Err == ErrTimeout {
+		if !ok || reply.Err == ErrWrongLeader || reply.Err == ErrTimeout {
 			ck.leaderId = (ck.leaderId + 1) % len(ck.servers)
 			continue
 		}
