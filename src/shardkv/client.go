@@ -38,9 +38,13 @@ type Clerk struct {
 	config   shardctrler.Config
 	make_end func(string) *labrpc.ClientEnd
 	// You will have to modify this struct.
+	leaderIds map[int]int // 记录 Leader 节点的 id，避免下一次请求的时候去轮询查找 Leader
+	// clientID+seqId 确定一个唯一的命令
+	clientId int64
+	seqId    int64
 }
 
-// the tester calls MakeClerk.
+// MakeClerk the tester calls MakeClerk.
 //
 // ctrlers[] is needed to call shardctrler.MakeClerk().
 //
@@ -52,10 +56,13 @@ func MakeClerk(ctrlers []*labrpc.ClientEnd, make_end func(string) *labrpc.Client
 	ck.sm = shardctrler.MakeClerk(ctrlers)
 	ck.make_end = make_end
 	// You'll have to add code here.
+	ck.leaderIds = make(map[int]int)
+	ck.clientId = nrand()
+	ck.seqId = 0
 	return ck
 }
 
-// fetch the current value for a key.
+// Get fetch the current value for a key.
 // returns "" if the key does not exist.
 // keeps trying forever in the face of all other errors.
 // You will have to modify this function.
@@ -68,8 +75,13 @@ func (ck *Clerk) Get(key string) string {
 		gid := ck.config.Shards[shard]
 		if servers, ok := ck.config.Groups[gid]; ok {
 			// try each server for the shard.
-			for si := 0; si < len(servers); si++ {
-				srv := ck.make_end(servers[si])
+			if _, exist := ck.leaderIds[gid]; !exist {
+				ck.leaderIds[gid] = 0
+			}
+			oldLeaderId := ck.leaderIds[gid]
+
+			for {
+				srv := ck.make_end(servers[ck.leaderIds[gid]])
 				var reply GetReply
 				ok := srv.Call("ShardKV.Get", &args, &reply)
 				if ok && (reply.Err == OK || reply.Err == ErrNoKey) {
@@ -79,20 +91,28 @@ func (ck *Clerk) Get(key string) string {
 					break
 				}
 				// ... not ok, or ErrWrongLeader
+				if !ok || reply.Err == ErrWrongLeader || reply.Err == ErrTimeout {
+					ck.leaderIds[gid] = (ck.leaderIds[gid] + 1) % len(servers)
+					if ck.leaderIds[gid] == oldLeaderId {
+						break
+					}
+					continue
+				}
 			}
 		}
 		time.Sleep(100 * time.Millisecond)
 		// ask controler for the latest configuration.
 		ck.config = ck.sm.Query(-1)
 	}
-
-	return ""
 }
 
-// shared by Put and Append.
+// PutAppend shared by Put and Append.
 // You will have to modify this function.
 func (ck *Clerk) PutAppend(key string, value string, op string) {
-	args := PutAppendArgs{}
+	args := PutAppendArgs{
+		ClientId: ck.clientId,
+		SeqId:    ck.seqId,
+	}
 	args.Key = key
 	args.Value = value
 	args.Op = op
@@ -101,17 +121,30 @@ func (ck *Clerk) PutAppend(key string, value string, op string) {
 		shard := key2shard(key)
 		gid := ck.config.Shards[shard]
 		if servers, ok := ck.config.Groups[gid]; ok {
-			for si := 0; si < len(servers); si++ {
-				srv := ck.make_end(servers[si])
+			if _, exist := ck.leaderIds[gid]; !exist {
+				ck.leaderIds[gid] = 0
+			}
+			oldLeaderId := ck.leaderIds[gid]
+
+			for {
+				srv := ck.make_end(servers[ck.leaderIds[gid]])
 				var reply PutAppendReply
 				ok := srv.Call("ShardKV.PutAppend", &args, &reply)
 				if ok && reply.Err == OK {
+					ck.seqId++
 					return
 				}
 				if ok && reply.Err == ErrWrongGroup {
 					break
 				}
 				// ... not ok, or ErrWrongLeader
+				if !ok || reply.Err == ErrWrongLeader || reply.Err == ErrTimeout {
+					ck.leaderIds[gid] = (ck.leaderIds[gid] + 1) % len(servers)
+					if ck.leaderIds[gid] == oldLeaderId {
+						break
+					}
+					continue
+				}
 			}
 		}
 		time.Sleep(100 * time.Millisecond)
