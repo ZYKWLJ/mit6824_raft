@@ -16,20 +16,26 @@ func (kv *ShardKV) applyTask() {
 				}
 				kv.lastApplied = message.CommandIndex
 
-				// 取出用户的操作信息
-				op := message.Command.(Op)
 				var opReply *OpReply
-				if op.OpType != OpGet && kv.requestDuplicated(op.ClientId, op.SeqId) {
-					opReply = kv.duplicateTable[op.ClientId].Reply
-				} else {
-					// 将操作应用状态机中
-					opReply = kv.applyToStateMachine(op)
-					if op.OpType != OpGet {
-						kv.duplicateTable[op.ClientId] = LastOperationInfo{
-							SeqId: op.SeqId,
-							Reply: opReply,
+				raftCommand := message.Command.(RaftCommand)
+				if raftCommand.CmdType == ClientOpeartion {
+					// 取出用户的操作信息
+					op := raftCommand.Data.(Op)
+					if op.OpType != OpGet && kv.requestDuplicated(op.ClientId, op.SeqId) {
+						opReply = kv.duplicateTable[op.ClientId].Reply
+					} else {
+						// 将操作应用状态机中
+						shardId := key2shard(op.Key)
+						opReply = kv.applyToStateMachine(op, shardId)
+						if op.OpType != OpGet {
+							kv.duplicateTable[op.ClientId] = LastOperationInfo{
+								SeqId: op.SeqId,
+								Reply: opReply,
+							}
 						}
 					}
+				} else {
+					opReply = kv.handleConfigChangeMessage(raftCommand)
 				}
 
 				// 将结果发送回去
@@ -58,9 +64,11 @@ func (kv *ShardKV) applyTask() {
 func (kv *ShardKV) fetchConfigTask() {
 	for !kv.killed() {
 		kv.mu.Lock()
-		newConfig := kv.mck.Query(-1)
-		kv.currentConfig = newConfig
+		newConfig := kv.mck.Query(kv.currentConfig.Num + 1)
 		kv.mu.Unlock()
+
+		// 传入 raft 模块进行同步
+		kv.ConfigCommand(RaftCommand{ConfigChange, newConfig}, &OpReply{})
 		time.Sleep(FetchConfigInterval)
 	}
 }
