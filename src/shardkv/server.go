@@ -222,6 +222,8 @@ func StartServer(servers []*labrpc.ClientEnd, me int, persister *raft.Persister,
 
 	go kv.applyTask()
 	go kv.fetchConfigTask()
+	go kv.shardMigrationTask()
+	go kv.shardGCTask()
 	return kv
 }
 
