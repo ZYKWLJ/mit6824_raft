@@ -24,19 +24,7 @@ func (kv *ShardKV) applyTask() {
 				if raftCommand.CmdType == ClientOpeartion {
 					// 取出用户的操作信息
 					op := raftCommand.Data.(Op)
-					if op.OpType != OpGet && kv.requestDuplicated(op.ClientId, op.SeqId) {
-						opReply = kv.duplicateTable[op.ClientId].Reply
-					} else {
-						// 将操作应用状态机中
-						shardId := key2shard(op.Key)
-						opReply = kv.applyToStateMachine(op, shardId)
-						if op.OpType != OpGet {
-							kv.duplicateTable[op.ClientId] = LastOperationInfo{
-								SeqId: op.SeqId,
-								Reply: opReply,
-							}
-						}
-					}
+					opReply = kv.applyClientOperation(op)
 				} else {
 					opReply = kv.handleConfigChangeMessage(raftCommand)
 				}
@@ -69,12 +57,25 @@ func (kv *ShardKV) fetchConfigTask() {
 
 		if _, isLeader := kv.rf.GetState(); isLeader {
 
+			needFetch := true
 			kv.mu.Lock()
-			newConfig := kv.mck.Query(kv.currentConfig.Num + 1)
+			// 如果有 shard 的状态是非 Normal 的，则说明前一个配置变更的任务正在进行中
+			for _, shard := range kv.shards {
+				if shard.Status != Normal {
+					needFetch = false
+					break
+				}
+			}
+			currentNum := kv.currentConfig.Num
 			kv.mu.Unlock()
 
-			// 传入 raft 模块进行同步
-			kv.ConfigCommand(RaftCommand{ConfigChange, newConfig}, &OpReply{})
+			if needFetch {
+				newConfig := kv.mck.Query(currentNum + 1)
+				// 传入 raft 模块进行同步
+				if newConfig.Num == currentNum+1 {
+					kv.ConfigCommand(RaftCommand{ConfigChange, newConfig}, &OpReply{})
+				}
+			}
 		}
 
 		time.Sleep(FetchConfigInterval)
@@ -214,4 +215,25 @@ func (kv *ShardKV) DeleteShardsData(args *ShardOperationArgs, reply *ShardOperat
 	kv.ConfigCommand(RaftCommand{ShardGC, *args}, &opReply)
 
 	reply.Err = opReply.Err
+}
+
+func (kv *ShardKV) applyClientOperation(op Op) *OpReply {
+	if kv.matchGroup(op.Key) {
+		var opReply *OpReply
+		if op.OpType != OpGet && kv.requestDuplicated(op.ClientId, op.SeqId) {
+			opReply = kv.duplicateTable[op.ClientId].Reply
+		} else {
+			// 将操作应用状态机中
+			shardId := key2shard(op.Key)
+			opReply = kv.applyToStateMachine(op, shardId)
+			if op.OpType != OpGet {
+				kv.duplicateTable[op.ClientId] = LastOperationInfo{
+					SeqId: op.SeqId,
+					Reply: opReply,
+				}
+			}
+		}
+		return opReply
+	}
+	return &OpReply{Err: ErrWrongGroup}
 }
