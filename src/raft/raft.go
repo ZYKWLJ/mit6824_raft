@@ -128,6 +128,7 @@ func (rf *Raft) becomeCandidateLocked() {
 	}
 
 	LOG(rf.me, rf.currentTerm, DVote, "%s->Candidate, For T%d", rf.role, rf.currentTerm+1)
+	rf.resetElectionTimerLocked()
 	rf.currentTerm++
 	rf.role = Candidate
 	rf.votedFor = rf.me
