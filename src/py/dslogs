@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import sys
 import shutil
 from typing import Optional, List, Tuple, Dict
@@ -12,11 +12,6 @@ from rich.traceback import install
 # fmt: off
 # Mapping from topics to colors
 TOPICS = {
-    "DBUG": "#ffffff",
-    "INFO": "#ffffff",
-    "WARN": "#d08341",
-    "ERRO": "#fe2626",
-
     "TIMR": "#9a9a99",
     "VOTE": "#67a0b2",
     "LEAD": "#d0b343",
@@ -29,8 +24,10 @@ TOPICS = {
     "DROP": "#ff615c",
     "CLNT": "#00813c",
     "TEST": "#fe2c79",
+    "INFO": "#ffffff",
+    "WARN": "#d08341",
+    "ERRO": "#fe2626",
     "TRCE": "#fe2626",
-    "APLY": "#696773",
 }
 # fmt: on
 
@@ -49,7 +46,6 @@ def main(
     file: typer.FileText = typer.Argument(None, help="File to read, stdin otherwise"),
     colorize: bool = typer.Option(True, "--no-color"),
     n_columns: Optional[int] = typer.Option(None, "--columns", "-c"),
-    withTime: bool = typer.Option(False, "--time", "-t"),
     ignore: Optional[str] = typer.Option(None, "--ignore", "-i", callback=list_topics),
     just: Optional[str] = typer.Option(None, "--just", "-j", callback=list_topics),
 ):
@@ -70,7 +66,7 @@ def main(
     panic = False
     for line in input_:
         try:
-            time, term, topic, *msg = line.strip().split(" ")
+            time, topic, *msg = line.strip().split(" ")
             # To ignore some topics
             if topic not in topics:
                 continue
@@ -90,20 +86,17 @@ def main(
 
             # Single column printing. Always the case for debug stmts in tests
             if n_columns is None or topic == "TEST":
-                print(time, term, msg)
+                print(time, msg)
             # Multi column printing, timing is dropped to maximize horizontal
             # space. Heavylifting is done through rich.column.Columns object
             else:
                 cols = ["" for _ in range(n_columns)]
-                msg = term + ":" + msg
-                if withTime:
-                    msg = time + ":" + msg
+                msg = "" + msg
                 cols[i] = msg
                 col_width = int(width / n_columns)
                 cols = Columns(cols, width=col_width - 1, equal=True, expand=True)
                 print(cols)
-        except Exception as e:
-            print("===e=",e)
+        except:
             # Code from tests or panics does not follow format
             # so we print it as is
             if line.startswith("panic"):
