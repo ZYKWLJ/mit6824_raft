@@ -32,6 +32,11 @@ type AppendEntriesArgs struct {
 type AppendEntriesReply struct {
 	Term    int
 	Success bool
+	//PartC——实现日志回溯的精确定位，通过告知Leader自己的日志到哪里，直接方便Leader同步剩下的日志！
+	//第一条做法的目的在于，如果Follower日志过短，可以提示Leader迅速回退到Follower日志的末尾，而不用傻傻 的一个个index或者term往前试探。
+	ConflictIndex int
+	//第二条的目的在于，如果Follower存在Leader.PrevLog,但不匹配，则将对应term的日志全部跳过。
+	ConflictTerm int
 }
 
 // 接收方的心跳函数(包括日志复制！)//这里主要是针对Followers
@@ -47,22 +52,32 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		return
 	}
 	//来自高任期领导者的压制，强制你成为跟随者！
-	if args.Term > rf.currentTerm {
+	if args.Term >= rf.currentTerm {
 		rf.becomeFollowerLocked(args.Term)
 	}
+	//立马重置选举时钟！防止日志复制时长很长，导致选举错过！
+	//defer 将函数调用延迟到包含 defer 语句的函数即将返回时执行，常用于资源清理、解锁等操作，以确保这些操作在函数结束时一定会被执行。
+	defer rf.resetElectionTimerLocked()
 	//return false if prevLog not matched
 	//表示领导者希望追随者从哪个日志索引开始追加新的日志条目。也就是说，领导者期望追随者的日志中在 args.PrevLogIndex 这个位置已经有一条相同的日志。
-	if args.PrevLogIndex > len(rf.log) {
+	if args.PrevLogIndex >= len(rf.log) {
+		reply.ConflictTerm = InvalidTerm
+		reply.ConflictIndex = len(rf.log)
 		//意味着领导者要求追随者从一个超出其当前日志长度的索引位置开始追加日志。这是不合理的，因为追随者的日志中根本不存在 args.PrevLogIndex 这个位置的日志，说明领导者和追随者的日志状态不一致，追随者无法按照领导者的要求进行日志复制。
-		LOG(rf.me, rf.currentTerm, DLog2, "<- S%d, Reject log, Higher term, T%d<T%d", args.LeaderId, args.Term, rf.currentTerm)
+		//LOG(rf.me, rf.currentTerm, DLog2, "<- S%d, Reject log, Higher term, T%d<T%d", args.LeaderId, args.Term, rf.currentTerm)
+		LOG(rf.me, rf.currentTerm, DLog2, "<- S%d, Reject log, Follower log too short, Len:%d < Prev:T%d", args.LeaderId, len(rf.log), args.PrevLogIndex)
+		return
 	}
 	//如果对齐的日志任期不相等，直接FALSE！
 	if rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
+		reply.ConflictTerm = rf.log[args.PrevLogIndex].Term
+		reply.ConflictIndex = rf.firstLogFor(reply.ConflictTerm) //冲突的第一条日志
 		LOG(rf.me, rf.currentTerm, DLog2, "<- S%d, Reject log, Prev log not match, [%d]: T%d!=T%d", args.LeaderId, args.PrevLogIndex, rf.log[args.PrevLogIndex].Term, args.PrevLogTerm)
 		return
 	}
 	//Append the leader's log entries to the local
 	rf.log = append(rf.log[:args.PrevLogIndex+1], args.Entries...)
+	rf.persistLocked() //must persist，cause it has changed term\voteFor\log
 	//直到这里才是成功日志对齐！
 	reply.Success = true
 	LOG(rf.me, rf.currentTerm, DLog2, "Follower accept logs:(%d, %d]", args.PrevLogIndex, args.PrevLogIndex+len(args.Entries)) //the ranges of the follower has accepted
@@ -74,8 +89,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.commitIndex = args.LeaderCommit
 		rf.applyCond.Signal()
 	}
-	//重置选举时钟！
-	rf.resetElectionTimerLocked()
+
 }
 
 // 发送方的心跳函数
@@ -114,17 +128,38 @@ func (rf *Raft) startReplication(term int) bool {
 			rf.becomeFollowerLocked(reply.Term)
 			return
 		}
-		//	处理回复
+		//	处理回复handle the reply
 		//先检测日志匹配不成功的情况，如果不匹配就探测更低的匹配点，到最终的开始一定是匹配的，因为头结点的存在！
 		if !reply.Success {
-			//先实现次优化的，后面再优化性能。先关注功能，再关注性能
-			//go back term
-			//这里的逻辑是怎么样的？
-			idx, term := args.PrevLogIndex, args.PrevLogTerm
-			for idx > 0 && rf.log[idx].Term == term { //上一个任期一定是相匹配的！
-				idx--
+			//日志回溯的版本2，接受reply的匹配日志信息，快速定位
+			preIndex := rf.nextIndex[peer]
+			if reply.ConflictTerm == InvalidTerm { //一直匹配到最低点(头结点)
+				rf.nextIndex[peer] = reply.ConflictIndex
+			} else {
+				firstIndex := rf.firstLogFor(reply.ConflictTerm)
+				if firstIndex != reply.ConflictIndex {
+					rf.nextIndex[peer] = firstIndex
+				} else {
+					rf.nextIndex[peer] = reply.ConflictIndex
+				}
 			}
-			rf.nextIndex[peer] = idx + 1
+			//avoid unordered reply
+			//匹配探测期比较长时，会有多个探测的 RPC，如果 RPC 结果乱序回来：一个先发出去的探测 RPC 后回来了，
+			//其中所携带的 ConflictTerm 和 ConflictIndex 就有可能造成 rf.next 的“反复横跳”。为此，我们可以强制 rf.next 单调递减：
+			if rf.nextIndex[peer] > preIndex {
+				rf.nextIndex[peer] = preIndex
+			}
+			//这是日志回溯的，版本1已经废除，太费时间了！
+
+			////先实现次优化的，后面再优化性能。先关注功能，再关注性能
+			////go back term
+			////这里的逻辑是怎么样的？
+			//idx, term := args.PrevLogIndex, args.PrevLogTerm
+			////这里的每次回退都是一个RPC，那么回退次数过多的话会造成RPC延迟过长，不太好！
+			//for idx > 0 && rf.log[idx].Term == term { //上一个任期一定是相匹配的！
+			//	idx--
+			//}
+			//rf.nextIndex[peer] = idx + 1
 			LOG(rf.me, rf.currentTerm, DLog, "Not match with S%d in %d, try next=%d", peer, args.PrevLogIndex, rf.nextIndex[peer])
 			return
 		}

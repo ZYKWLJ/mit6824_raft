@@ -81,7 +81,9 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	//3.正式投票给RPC发起者
 	reply.VoteGranted = true       //自己投过票了！
 	rf.votedFor = args.CandidateId //投票给RPC的发起者(Candidate)
-	rf.resetElectionTimerLocked()  //重置自己的选举时钟，这是来自(准)Leader的压迫
+	//here need to persist because it has changed the three field's info
+	rf.persistLocked()
+	rf.resetElectionTimerLocked() //重置自己的选举时钟，这是来自(准)Leader的压迫
 	LOG(rf.me, rf.currentTerm, DVote, "-> S%d, Vote Granted", rf.role)
 
 }

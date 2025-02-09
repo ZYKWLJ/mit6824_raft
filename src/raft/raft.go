@@ -38,6 +38,11 @@ const (
 type Role string
 
 const (
+	InvalidTerm  = 0
+	InvalidIndex = 0
+)
+
+const (
 	Leader    Role = "Leader"
 	Follower  Role = "Follower"
 	Candidate Role = "Candidate"
@@ -108,11 +113,16 @@ func (rf *Raft) becomeFollowerLocked(term int) {
 	}
 	//LOG展示任期的变化（变为Follower）:收到了来自其他实例的高任期心跳(政令)，高任期实例强制压迫其他实例成为Follower，任期向Leader收敛！
 	LOG(rf.me, rf.currentTerm, DLog, "%s->Follower, For T%s->T%s", rf.role, rf.currentTerm, term)
-	rf.role = Follower         //被压迫了，强制成为Follower
+	rf.role = Follower //被压迫了，强制成为Follower
+	shouldPersister := rf.currentTerm != term
 	if term > rf.currentTerm { //迈入新的term时，会重置投票(因为外面是==的逻辑！这里新增的>的逻辑！)
 		rf.votedFor = -1
 	}
 	rf.currentTerm = term //低任期向高任期实例的任期收敛
+	//need to persister cause its term is not equal to the args's term
+	if shouldPersister {
+		rf.persistLocked()
+	}
 }
 
 // 变为候选者条件
@@ -122,10 +132,13 @@ func (rf *Raft) becomeCandidateLocked() {
 		return
 	}
 	LOG(rf.me, rf.currentTerm, DVote, "%s->Candidate, For T%d", rf.role, rf.currentTerm+1)
-	rf.currentTerm++              //变为候选者，任期会增加(是选举时间过期了，所以任期增加~)
-	rf.role = Candidate           //变为候选者
-	rf.votedFor = rf.me           //一定会给自己投一票
-	rf.resetElectionTimerLocked() //重置选举时钟
+	rf.currentTerm++    //变为候选者，任期会增加(是选举时间过期了，所以任期增加~)
+	rf.role = Candidate //变为候选者
+	rf.votedFor = rf.me //一定会给自己投一票
+	//rf.resetElectionTimerLocked() //重置选举时钟
+	//这里修改了三个字段(currentTerm、votedFor、log)中的信息，所以需要持久化
+	//here changed the tree field's info ,so it need to persister
+	rf.persistLocked() //持久化
 }
 
 // 变为领导者的条件
@@ -141,6 +154,20 @@ func (rf *Raft) becomeLeader() {
 		rf.nextIndex[peer] = len(rf.log)
 		rf.matchIndex[peer] = 0 //The Dummy log always Equaled
 	}
+	//here don't changed the tree field's info ,so it needn't to persister
+	//	这里没有修改3个字段里面的任何一个字段，所以不需要持久化
+}
+
+// get first log
+func (rf *Raft) firstLogFor(term int) int {
+	for idx, entry := range rf.log { //Look for it from the front to the back
+		if entry.Term == term {
+			return idx
+		} else if entry.Term > term { //haven't found,return immediately
+			break
+		}
+	}
+	return InvalidIndex //没有找打，返回异常值
 }
 
 // return currentTerm and whether this server
@@ -151,44 +178,6 @@ func (rf *Raft) GetState() (int, bool) {
 	var isleader bool
 	// Your code here (PartA).
 	return term, isleader
-}
-
-// save Raft's persistent state to stable storage,
-// where it can later be retrieved after a crash and restart.
-// see paper's Figure 2 for a description of what should be persistent.
-// before you've implemented snapshots, you should pass nil as the
-// second argument to persister.Save().
-// after you've implemented snapshots, pass the current snapshot
-// (or nil if there's not yet a snapshot).
-func (rf *Raft) persist() {
-	// Your code here (PartC).
-	// Example:
-	// w := new(bytes.Buffer)
-	// e := labgob.NewEncoder(w)
-	// e.Encode(rf.xxx)
-	// e.Encode(rf.yyy)
-	// raftstate := w.Bytes()
-	// rf.persister.Save(raftstate, nil)
-}
-
-// restore previously persisted state.
-func (rf *Raft) readPersist(data []byte) {
-	if data == nil || len(data) < 1 { // bootstrap without any state?
-		return
-	}
-	// Your code here (PartC).
-	// Example:
-	// r := bytes.NewBuffer(data)
-	// d := labgob.NewDecoder(r)
-	// var xxx
-	// var yyy
-	// if d.Decode(&xxx) != nil ||
-	//    d.Decode(&yyy) != nil {
-	//   error...
-	// } else {
-	//   rf.xxx = xxx
-	//   rf.yyy = yyy
-	// }
 }
 
 // the service says it has created a snapshot that has
@@ -214,13 +203,23 @@ func (rf *Raft) Snapshot(index int, snapshot []byte) {
 // term. the third return value is true if this server believes it is
 // the leader.
 func (rf *Raft) Start(command interface{}) (int, int, bool) {
-	index := -1
-	term := -1
-	isLeader := true
-
+	//index := -1
+	//term := -1
+	//isLeader := true
 	// Your code here (PartB).
-
-	return index, term, isLeader
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+	if rf.role != Leader {
+		return 0, 0, false
+	}
+	rf.log = append(rf.log, LogEntry{
+		CommandValid: true,
+		Command:      command,
+		Term:         rf.currentTerm,
+	})
+	LOG(rf.me, rf.currentTerm, DLeader, "Leader accept log [%d]T%d", len(rf.log)-1, rf.currentTerm)
+	rf.persistLocked()
+	return len(rf.log) - 1, rf.currentTerm, true
 }
 
 // the tester doesn't halt goroutines created by Raft after each test,
@@ -268,10 +267,10 @@ func Make(peers []*labrpc.ClientEnd, me int,
 
 	// Your initialization code here (PartA, PartB, PartC).
 	rf.role = Follower
-	rf.currentTerm = 0
-	rf.votedFor = -1 //-1 means votes for none cause this is initialization
+	rf.currentTerm = 1 //空出InvalidTerm为0的特殊任期
+	rf.votedFor = -1   //-1 means votes for none cause this is initialization
 	//the Dummy entry to avoid lots of corner checks which like The Dummy Node in the list!
-	rf.log = append(rf.log, LogEntry{})
+	rf.log = append(rf.log, LogEntry{Term: InvalidTerm})
 	//initialize the leader's view slice
 	rf.nextIndex = make([]int, len(rf.peers))
 	rf.matchIndex = make([]int, len(rf.peers))
