@@ -137,7 +137,7 @@ func (rf *Raft) startReplication(term int) bool {
 			if reply.ConflictTerm == InvalidTerm { //一直匹配到最低点(头结点)
 				rf.nextIndex[peer] = reply.ConflictIndex
 			} else {
-				firstIndex := rf.firstLogFor(reply.ConflictTerm)
+				firstIndex := rf.log.firstFor(reply.ConflictTerm)
 				if firstIndex != reply.ConflictIndex {
 					rf.nextIndex[peer] = firstIndex
 				} else {
@@ -197,6 +197,18 @@ func (rf *Raft) startReplication(term int) bool {
 		}
 
 		prevIdx := rf.nextIndex[peer] - 1
+		if prevIdx > rf.log.snapLastIdx {
+			args := &InstallSnapshotArgs{
+				Term:              rf.currentTerm,
+				LeaderId:          rf.me,
+				LastIncludedIndex: rf.log.snapLastIdx,
+				LastIncludedTerm:  rf.log.snapLastTerm,
+				Snapshot:          rf.log.snapshot,
+			}
+			LOG(rf.me, rf.currentTerm, DDebug, "-> S%d, SendSnap, Args=%v", peer, args.String())
+			//这里开始Leader将快照同步给follower节点了
+			go rf.InstallToPeer(peer, term, args)
+		}
 		prevTerm := rf.log.at(prevIdx).Term
 		//发送构造参数！
 		args := &AppendEntriesArgs{

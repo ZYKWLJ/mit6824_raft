@@ -36,7 +36,7 @@ func (rf *Raft) persistLocked() {
 	//e.Encode(rf.log)在PartD弃用了
 	rf.log.persist(e) //启动日志的持久化函数
 	raftstate := w.Bytes()
-	rf.persister.Save(raftstate, nil)
+	rf.persister.Save(raftstate, rf.log.snapshot) //将snapshot进行持久化！
 	//一个helper函数，打印持久化的东西到底是什么！
 	LOG(rf.me, rf.currentTerm, DPersist, "Persist: %v", rf.persisterString())
 }
@@ -79,6 +79,11 @@ func (rf *Raft) readPersist(data []byte) {
 	if err := rf.log.readPersist(d); err != nil {
 		LOG(rf.me, rf.currentTerm, DPersist, "Read log err:%v", err)
 		return
+	}
+	rf.log.snapshot = rf.persister.ReadSnapshot()
+	if rf.commitIndex < rf.log.snapLastIdx {
+		rf.commitIndex = rf.log.snapLastIdx
+		rf.lastApplied = rf.log.snapLastIdx
 	}
 	//print the failover info
 	LOG(rf.me, rf.currentTerm, DPersist, "Read from disk: %v", rf.persisterString())

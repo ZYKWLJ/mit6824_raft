@@ -169,18 +169,6 @@ func (rf *Raft) GetState() (int, bool) {
 	return term, isleader
 }
 
-// the service says it has created a snapshot that has
-// all info up to and including index. this means the
-// service no longer needs the log through (and including)
-// that index. Raft should now trim its log as much as possible.
-func (rf *Raft) Snapshot(index int, snapshot []byte) {
-	// Your code here (PartD).
-	rf.mu.Lock()
-	defer rf.mu.Unlock()
-	rf.log.doSnapshot(index, snapshot)
-	rf.persistLocked()
-}
-
 // 这是raft对外提供的接口！外面使用raft来完成一致性任务的！
 // the service using Raft (e.g. a k/v server) wants to start
 // agreement on the next command to be appended to Raft's log. if this
