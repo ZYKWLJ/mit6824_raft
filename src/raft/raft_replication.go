@@ -1,6 +1,7 @@
 package raft
 
 import (
+	//"go/ast"
 	"sort"
 	"time"
 )
@@ -60,23 +61,23 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	defer rf.resetElectionTimerLocked()
 	//return false if prevLog not matched
 	//表示领导者希望追随者从哪个日志索引开始追加新的日志条目。也就是说，领导者期望追随者的日志中在 args.PrevLogIndex 这个位置已经有一条相同的日志。
-	if args.PrevLogIndex >= len(rf.log) {
+	if args.PrevLogIndex >= rf.log.size() {
 		reply.ConflictTerm = InvalidTerm
-		reply.ConflictIndex = len(rf.log)
+		reply.ConflictIndex = rf.log.size()
 		//意味着领导者要求追随者从一个超出其当前日志长度的索引位置开始追加日志。这是不合理的，因为追随者的日志中根本不存在 args.PrevLogIndex 这个位置的日志，说明领导者和追随者的日志状态不一致，追随者无法按照领导者的要求进行日志复制。
 		//LOG(rf.me, rf.currentTerm, DLog2, "<- S%d, Reject log, Higher term, T%d<T%d", args.LeaderId, args.Term, rf.currentTerm)
-		LOG(rf.me, rf.currentTerm, DLog2, "<- S%d, Reject log, Follower log too short, Len:%d < Prev:T%d", args.LeaderId, len(rf.log), args.PrevLogIndex)
+		LOG(rf.me, rf.currentTerm, DLog2, "<- S%d, Reject log, Follower log too short, Len:%d < Prev:T%d", args.LeaderId, rf.log.size(), args.PrevLogIndex)
 		return
 	}
 	//如果对齐的日志任期不相等，直接FALSE！
-	if rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
-		reply.ConflictTerm = rf.log[args.PrevLogIndex].Term
-		reply.ConflictIndex = rf.firstLogFor(reply.ConflictTerm) //冲突的第一条日志
-		LOG(rf.me, rf.currentTerm, DLog2, "<- S%d, Reject log, Prev log not match, [%d]: T%d!=T%d", args.LeaderId, args.PrevLogIndex, rf.log[args.PrevLogIndex].Term, args.PrevLogTerm)
+	if rf.log.at(args.PrevLogIndex).Term != args.PrevLogTerm {
+		reply.ConflictTerm = rf.log.at(args.PrevLogIndex).Term
+		reply.ConflictIndex = rf.log.firstFor(reply.ConflictTerm) //冲突的第一条日志
+		LOG(rf.me, rf.currentTerm, DLog2, "<- S%d, Reject log, Prev log not match, [%d]: T%d!=T%d", args.LeaderId, args.PrevLogIndex, rf.log.at(args.PrevLogIndex).Term, args.PrevLogTerm)
 		return
 	}
 	//Append the leader's log entries to the local
-	rf.log = append(rf.log[:args.PrevLogIndex+1], args.Entries...)
+	rf.log.appendFrom(args.PrevLogIndex, args.Entries)
 	rf.persistLocked() //must persist，cause it has changed term\voteFor\log
 	//直到这里才是成功日志对齐！
 	reply.Success = true
@@ -160,7 +161,9 @@ func (rf *Raft) startReplication(term int) bool {
 			//	idx--
 			//}
 			//rf.nextIndex[peer] = idx + 1
-			LOG(rf.me, rf.currentTerm, DLog, "Not match with S%d in %d, try next=%d", peer, args.PrevLogIndex, rf.nextIndex[peer])
+			//LOG(rf.me, rf.currentTerm, DLog, "Not match with S%d in %d, try next=%d", peer, args.PrevLogIndex, rf.nextIndex[peer])
+			LOG(rf.me, rf.currentTerm, DLog, "-> S%d, Not matched at Prev=[%d]T%d, Try next Prev=[%d]T%d", peer, args.PrevLogIndex, args.PrevLogTerm, rf.nextIndex[peer]-1, rf.log.at(rf.nextIndex[peer]-1))
+			LOG(rf.me, rf.currentTerm, DDebug, "-> S%d, Leader log=%v", peer, rf.log.String())
 			return
 		}
 		//如果日志追加成功，更新已匹配点和下一个欲匹配下标！
@@ -171,6 +174,7 @@ func (rf *Raft) startReplication(term int) bool {
 		// Leader在收到Follower成功Append后，便更新已提交的下标(commitIndex)，指导follower的本地apply=>Signal()循环！
 		majorityMatched := rf.getMajorityIndexLocked()
 		if majorityMatched > rf.commitIndex {
+			LOG(rf.me, rf.currentTerm, DApply, "Leader update the commit index %d->%d", rf.commitIndex, majorityMatched)
 			rf.commitIndex = majorityMatched
 			rf.applyCond.Signal() //唤醒之前的wait()
 		}
@@ -187,20 +191,20 @@ func (rf *Raft) startReplication(term int) bool {
 			//self matchIndex handler
 			//自身匹配点肯定是日志长度减1
 			//自身下一个欲匹配点是日志长度！
-			rf.matchIndex[peer] = len(rf.log) - 1
-			rf.nextIndex[peer] = len(rf.log)
+			rf.matchIndex[peer] = rf.log.size() - 1
+			rf.nextIndex[peer] = rf.log.size()
 			continue
 		}
 
 		prevIdx := rf.nextIndex[peer] - 1
-		prevTerm := rf.log[prevIdx].Term
+		prevTerm := rf.log.at(prevIdx).Term
 		//发送构造参数！
 		args := &AppendEntriesArgs{
 			Term:         rf.currentTerm,
 			LeaderId:     rf.me,
 			PrevLogIndex: prevIdx,
 			PrevLogTerm:  prevTerm,
-			Entries:      rf.log[prevIdx+1:],
+			Entries:      rf.log.tail(prevIdx + 1),
 			LeaderCommit: rf.currentTerm,
 		}
 		go replicateToPeer(peer, args)

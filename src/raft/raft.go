@@ -84,8 +84,9 @@ type Raft struct {
 	currentTerm int //当前任期
 	votedFor    int //表示当前有没有投过票，投过谁。-1 means votes for none
 	//log in the Peer's local
-	log []LogEntry
+	//log []LogEntry
 
+	log *RaftLog //PartD
 	//the following two fields only used in Leader
 	//the two equivalent to every peer's view
 	//这两个属性相当于每一个实例的视图
@@ -151,23 +152,11 @@ func (rf *Raft) becomeLeader() {
 	rf.role = Leader
 	//initialization the peers matchIndex
 	for peer := 0; peer < len(rf.peers); peer++ {
-		rf.nextIndex[peer] = len(rf.log)
+		rf.nextIndex[peer] = rf.log.size()
 		rf.matchIndex[peer] = 0 //The Dummy log always Equaled
 	}
 	//here don't changed the tree field's info ,so it needn't to persister
 	//	这里没有修改3个字段里面的任何一个字段，所以不需要持久化
-}
-
-// get first log
-func (rf *Raft) firstLogFor(term int) int {
-	for idx, entry := range rf.log { //Look for it from the front to the back
-		if entry.Term == term {
-			return idx
-		} else if entry.Term > term { //haven't found,return immediately
-			break
-		}
-	}
-	return InvalidIndex //没有找打，返回异常值
 }
 
 // return currentTerm and whether this server
@@ -186,7 +175,10 @@ func (rf *Raft) GetState() (int, bool) {
 // that index. Raft should now trim its log as much as possible.
 func (rf *Raft) Snapshot(index int, snapshot []byte) {
 	// Your code here (PartD).
-
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+	rf.log.doSnapshot(index, snapshot)
+	rf.persistLocked()
 }
 
 // 这是raft对外提供的接口！外面使用raft来完成一致性任务的！
@@ -212,14 +204,15 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	if rf.role != Leader {
 		return 0, 0, false
 	}
-	rf.log = append(rf.log, LogEntry{
+	//直接调用自己的追加函数
+	rf.log.append(LogEntry{
 		CommandValid: true,
 		Command:      command,
 		Term:         rf.currentTerm,
 	})
-	LOG(rf.me, rf.currentTerm, DLeader, "Leader accept log [%d]T%d", len(rf.log)-1, rf.currentTerm)
+	LOG(rf.me, rf.currentTerm, DLeader, "Leader accept log [%d]T%d", rf.log.size()-1, rf.currentTerm)
 	rf.persistLocked()
-	return len(rf.log) - 1, rf.currentTerm, true
+	return rf.log.size() - 1, rf.currentTerm, true
 }
 
 // the tester doesn't halt goroutines created by Raft after each test,
@@ -270,7 +263,8 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.currentTerm = 1 //空出InvalidTerm为0的特殊任期
 	rf.votedFor = -1   //-1 means votes for none cause this is initialization
 	//the Dummy entry to avoid lots of corner checks which like The Dummy Node in the list!
-	rf.log = append(rf.log, LogEntry{Term: InvalidTerm})
+	//rf.log = append(rf.log, LogEntry{Term: InvalidTerm})
+	rf.log = NewLog(InvalidIndex, InvalidTerm, nil, nil) //PartD
 	//initialize the leader's view slice
 	rf.nextIndex = make([]int, len(rf.peers))
 	rf.matchIndex = make([]int, len(rf.peers))

@@ -8,7 +8,7 @@ import (
 
 // print the persister Info state from the failover
 func (rf *Raft) persisterString() string {
-	return fmt.Sprintf("T%d, VoteFor: %d, Log: [0:%d)", rf.currentTerm, rf.votedFor, len(rf.log))
+	return fmt.Sprintf("T%d, VoteFor: %d, Log: [0:%d)", rf.currentTerm, rf.votedFor, rf.log.size())
 }
 
 // save Raft's persistent state to stable storage,
@@ -33,7 +33,8 @@ func (rf *Raft) persistLocked() {
 	e := labgob.NewEncoder(w)
 	e.Encode(rf.currentTerm)
 	e.Encode(rf.votedFor)
-	e.Encode(rf.log)
+	//e.Encode(rf.log)在PartD弃用了
+	rf.log.persist(e) //启动日志的持久化函数
 	raftstate := w.Bytes()
 	rf.persister.Save(raftstate, nil)
 	//一个helper函数，打印持久化的东西到底是什么！
@@ -58,10 +59,10 @@ func (rf *Raft) readPersist(data []byte) {
 	//   rf.xxx = xxx
 	//   rf.yyy = yyy
 	// }
-	var currTerm, VotedFor int
-	var log []LogEntry
+
 	r := bytes.NewBuffer(data)
 	d := labgob.NewDecoder(r)
+	var currTerm, VotedFor int
 	//分别分开写，这样报错就容易看出
 	if err := d.Decode(&currTerm); err != nil {
 		LOG(rf.me, rf.currentTerm, DPersist, "Read Persist err:%v", err)
@@ -75,11 +76,10 @@ func (rf *Raft) readPersist(data []byte) {
 	}
 	rf.votedFor = VotedFor
 
-	if err := d.Decode(&rf.log); err != nil {
+	if err := rf.log.readPersist(d); err != nil {
 		LOG(rf.me, rf.currentTerm, DPersist, "Read log err:%v", err)
 		return
 	}
-	rf.log = log
 	//print the failover info
 	LOG(rf.me, rf.currentTerm, DPersist, "Read from disk: %v", rf.persisterString())
 }

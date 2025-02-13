@@ -9,7 +9,7 @@ func (rf *Raft) applicationTicker() {
 		rf.applyCond.Wait()
 		entries := make([]LogEntry, 0) //定义日志条目
 		for i := rf.lastApplied + 1; i <= rf.commitIndex; i++ {
-			entries = append(entries, rf.log[i]) //追加日志条目
+			entries = append(entries, rf.log.at(i)) //追加日志条目
 		}
 		rf.mu.Unlock()
 		//注意对构造的apply message进行apply

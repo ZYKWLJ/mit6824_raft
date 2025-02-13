@@ -15,8 +15,7 @@ func (rf *Raft) resetElectionTimerLocked() {
 // 比较候选者与RPC接收者最后一个日志谁的新？
 // 看看是不是RPC接收者的日志更新
 func (rf *Raft) isMoreUpToDateLocked(candidateIndex, candidateTerm int) bool {
-	l := len(rf.log)
-	lastIndex, lastTerm := l-1, rf.log[l-1].Term
+	lastIndex, lastTerm := rf.log.last()
 	LOG(rf.me, rf.currentTerm, DVote, "Compare last log, Me: [%d]T%d, Candidate: [%d]T%d", lastIndex, lastTerm, candidateIndex, candidateTerm)
 	//两者任期不相等的话
 	if lastTerm != candidateTerm {
@@ -181,7 +180,8 @@ func (rf *Raft) startElection(term int) {
 		LOG(rf.me, rf.currentTerm, DVote, "Lost context, Candidate changes to %s, abort RequestVote", rf.role)
 		return //如果检测到不是在这个term里面的Candidate，直接返回pass
 	}
-	l := len(rf.log)
+	//l := len(rf.log)
+	lastIdx, lastTerm := rf.log.last()
 	for peer := 0; peer < len(rf.peers); peer++ { //挨个选举
 		if peer == rf.me { //自己一定投票给自己
 			votes++
@@ -190,8 +190,8 @@ func (rf *Raft) startElection(term int) {
 		args := &RequestVoteArgs{ //构造RPC的参数
 			Term:         rf.currentTerm,
 			CandidateId:  rf.me,
-			LastLogIndex: l - 1,
-			LastLogTerm:  rf.log[l-1].Term,
+			LastLogIndex: lastIdx,
+			LastLogTerm:  lastTerm,
 		}
 		go askVoteFromPeer(peer, args) //回调函数
 	}
