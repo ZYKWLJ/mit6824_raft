@@ -40,6 +40,18 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 	LOG(rf.me, rf.currentTerm, DDebug, "<- S%d, RecvSnapshot, Args=%v", args.LeaderId, args.String())
+	//	Follower会进行相应的判断才进行复制日志
+	reply.Term = rf.currentTerm
+	//	align the term
+	if args.Term < rf.currentTerm {
+		LOG(rf.me, rf.currentTerm, DSnap, "<- S%d, Reject Snap, High Term: T%d>T%d", args.LeaderId, rf.currentTerm, args.Term)
+		return
+	}
+	//Install the snapshot in the memory/persist/app
+	rf.log.installSnapshot(args.LastIncludedIndex, args.LastIncludedTerm, args.Snapshot)
+	rf.persistLocked()
+	rf.snapPending = true
+	rf.applyCond.Signal()
 }
 
 // Leader发送给Follower的日志快照复制请求
@@ -73,5 +85,5 @@ func (rf *Raft) InstallToPeer(peer, term int, args *InstallSnapshotArgs) {
 	}
 	//	note:we needn't updata the commitIndex
 	//	because the snapshot must include the commitIndex
-	
+
 }

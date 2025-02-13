@@ -112,6 +112,8 @@ func (rl *RaftLog) String() string {
 }
 
 // snapshot in the index
+// do checkpoint from the app layer
+// 这是应用层从上往下传给Raft(Leader)层的
 func (rl *RaftLog) doSnapshot(index int, snapshot []byte) {
 	idx := rl.idx(index)
 	rl.snapLastIdx = index
@@ -120,13 +122,28 @@ func (rl *RaftLog) doSnapshot(index int, snapshot []byte) {
 	//	重新创建一个新的日志数组
 	//make函数在go里面是内置的用于创建切片、映射、通道三种引用类型的函数
 	newLog := make([]LogEntry, 0, rl.size()-rl.snapLastIdx) //用于指定创建对象的初始大小和容量
-	newLog = append(newLog, LogEntry{                       //先加入空日志为起始
+	newLog = append(newLog, LogEntry{ //先加入空日志为起始
 		Term: rl.snapLastTerm,
 	})
 	//现在开始重新复制。
 	//... 是展开操作符。当它用于切片时，会把切片中的元素展开。在 append 函数里使用展开操作符，就可以将一个切片的所有元素追加到另一个切片中。
 	//这行代码调用 append 函数，将 rl.tailLog[idx:] 切片展开后的所有元素追加到 newLog 切片的末尾，然后把追加后的结果赋值给 newLog
 	newLog = append(newLog, rl.tailLog[idx:]...)
+	rl.tailLog = newLog
+}
+
+// do checkpoint from the app layer
+// 这是follower层从下往上传给应用层的。这里的思路是直接覆盖，所以这直接覆盖就好了，无需复制什么的！
+func (rl *RaftLog) installSnapshot(index, term int, snapshot []byte) {
+	rl.snapLastIdx = index
+	rl.snapLastTerm = term
+	rl.snapshot = snapshot
+	//	重新创建一个新的日志数组
+	//make函数在go里面是内置的用于创建切片、映射、通道三种引用类型的函数
+	newLog := make([]LogEntry, 0, 1) //用于指定创建对象的初始大小和容量
+	newLog = append(newLog, LogEntry{ //先加入空日志为起始
+		Term: rl.snapLastTerm,
+	})
 	rl.tailLog = newLog
 }
 

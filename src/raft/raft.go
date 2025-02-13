@@ -97,6 +97,7 @@ type Raft struct {
 	//当commit更新并且大于lastApply时，就触发日志的apply
 	commitIndex     int
 	lastApplied     int
+	snapPending     bool //将Follower的日志往上应用到应用层
 	applyCh         chan ApplyMsg
 	applyCond       *sync.Cond    //golang 的条件变量(返回的是指针)
 	electionStarted time.Time     //选举开始时间
