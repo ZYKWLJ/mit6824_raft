@@ -122,7 +122,7 @@ func (rl *RaftLog) doSnapshot(index int, snapshot []byte) {
 	//	重新创建一个新的日志数组
 	//make函数在go里面是内置的用于创建切片、映射、通道三种引用类型的函数
 	newLog := make([]LogEntry, 0, rl.size()-rl.snapLastIdx) //用于指定创建对象的初始大小和容量
-	newLog = append(newLog, LogEntry{ //先加入空日志为起始
+	newLog = append(newLog, LogEntry{                       //先加入空日志为起始
 		Term: rl.snapLastTerm,
 	})
 	//现在开始重新复制。
@@ -140,7 +140,7 @@ func (rl *RaftLog) installSnapshot(index, term int, snapshot []byte) {
 	rl.snapshot = snapshot
 	//	重新创建一个新的日志数组
 	//make函数在go里面是内置的用于创建切片、映射、通道三种引用类型的函数
-	newLog := make([]LogEntry, 0, 1) //用于指定创建对象的初始大小和容量
+	newLog := make([]LogEntry, 0, 1)  //用于指定创建对象的初始大小和容量
 	newLog = append(newLog, LogEntry{ //先加入空日志为起始
 		Term: rl.snapLastTerm,
 	})
