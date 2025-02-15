@@ -19,7 +19,7 @@ package raft
 
 import (
 	//	"bytes"
-
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -31,11 +31,12 @@ import (
 const (
 	electionTimeoutMin time.Duration = 250 * time.Millisecond
 	electionTimeoutMax time.Duration = 400 * time.Millisecond
-
+	//PartA细节1: 日志复制间隔要比选举的小，避免日志复制失败角色就变了！
 	replicateInterval time.Duration = 70 * time.Millisecond
 )
 
 const (
+	//PartA细节2: 头日志定义(类似于头结点),做一致性处理
 	InvalidTerm  int = 0
 	InvalidIndex int = 0
 )
@@ -74,7 +75,7 @@ type Raft struct {
 	mu        sync.Mutex          // Lock to protect shared access to this peer's state
 	peers     []*labrpc.ClientEnd // RPC end points of all peers
 	persister *Persister          // Object to hold this peer's persisted state
-	me        int                 // this peer's index into peers[]
+	me        int                 // this peer's index into peers[]每一个节点在节点集群中的下标！
 	dead      int32               // set by Kill()
 
 	// Your data here (PartA, PartB, PartC).
@@ -89,6 +90,10 @@ type Raft struct {
 
 	// only used in Leader
 	// every peer's view
+	//PartA细节3 :
+	//这代表主节点中每一个从节点的视图
+	//(也就是已匹配点、下一个待匹配点)
+	//主节点的第一件事就是对齐nextIndex，然后做一致性检查(复制)！
 	nextIndex  []int
 	matchIndex []int
 
@@ -103,7 +108,12 @@ type Raft struct {
 	electionTimeout time.Duration // random
 }
 
+//PartA:三者角色转换的统一步骤、
+//1.判断能不能成？
+//2.成了干什么？
+
 func (rf *Raft) becomeFollowerLocked(term int) {
+	//PartA:细节2.如果RPC接收方的任期大于发起方的任期，那么直接拒绝投票，表示不能成为Leader！
 	if term < rf.currentTerm {
 		LOG(rf.me, rf.currentTerm, DError, "Can't become Follower, lower term: T%d", term)
 		return
@@ -111,31 +121,46 @@ func (rf *Raft) becomeFollowerLocked(term int) {
 
 	LOG(rf.me, rf.currentTerm, DLog, "%s->Follower, For T%v->T%v", rf.role, rf.currentTerm, term)
 	rf.role = Follower
+	//PartA细节4: 任期相等的逻辑处理，防止宕机重启后前面任期的数据丢失，至于当前任期，直接可以同步的！
 	shouldPersit := rf.currentTerm != term
+	//PartA细节5: 重要，仅仅任期升高才会重置投票~
 	if term > rf.currentTerm {
 		rf.votedFor = -1
 	}
+	//任期升高(向主节点收敛)
 	rf.currentTerm = term
+	//细节4讲的持久化
 	if shouldPersit {
 		rf.persistLocked()
 	}
 }
 
+// PartA 细节6:F->C 唯一条件——> 任期超时，发起选举~
 func (rf *Raft) becomeCandidateLocked() {
+	//PartA 细节7:没有L->C的角色流向
 	if rf.role == Leader {
 		LOG(rf.me, rf.currentTerm, DError, "Leader can't become Candidate")
 		return
 	}
 
 	LOG(rf.me, rf.currentTerm, DVote, "%s->Candidate, For T%d", rf.role, rf.currentTerm+1)
+	//PartA 细节8:称为Candidate后的动作
+
+	//8-1.重置选举时钟，以期待下一次选举成为L！
 	rf.resetElectionTimerLocked()
+	//8-2.触发条件就是任期超时，当然增加任期
 	rf.currentTerm++
+	//8-3.角色转换
 	rf.role = Candidate
+	//8-4.一定向自己投一票
 	rf.votedFor = rf.me
+	//8-5.一定会持久化，因为持久化三大件(日志、任期、投票)发生了变化!
 	rf.persistLocked()
 }
 
+// PartA 细节9:唯一条件——>候选者多票任选(就像体制内逐步升迁一样)
 func (rf *Raft) becomeLeaderLocked() {
+	//不是候选者，直接嘎(就是针对总结的话进行判断而已！)
 	if rf.role != Candidate {
 		LOG(rf.me, rf.currentTerm, DError, "Only Candidate can become Leader")
 		return
@@ -143,6 +168,10 @@ func (rf *Raft) becomeLeaderLocked() {
 
 	LOG(rf.me, rf.currentTerm, DLeader, "Become Leader in T%d", rf.currentTerm)
 	rf.role = Leader
+	//PartA 细节10:称为Leader后的动作
+	//称为L后的所有工作：所有节点向L收敛
+	//收敛前的准备动作：
+	//第一件事就是对齐`已匹配下标(0是一定匹配的，因为头日志的存在)、待匹配下标(从自身的日志最后开始算起)`
 	for peer := 0; peer < len(rf.peers); peer++ {
 		rf.nextIndex[peer] = rf.log.size()
 		rf.matchIndex[peer] = 0
@@ -222,6 +251,7 @@ func (rf *Raft) contextLostLocked(role Role, term int) bool {
 // for any long-running work.
 func Make(peers []*labrpc.ClientEnd, me int,
 	persister *Persister, applyCh chan ApplyMsg) *Raft {
+	fmt.Printf("新建一个Raft实例%d\n", me)
 	rf := &Raft{}
 	rf.peers = peers
 	rf.persister = persister

@@ -10,10 +10,12 @@ type RaftLog struct {
 	snapLastTerm int
 
 	// contains [1, snapLastIdx]
+	//这代表之前的压缩好的日志
 	snapshot []byte
 
 	// contains index (snapLastIdx, snapLastIdx+len(tailLog)-1] for real data
 	// contains index snapLastIdx for mock log entry
+	//这代表后面还未压缩的日志
 	tailLog []LogEntry
 }
 

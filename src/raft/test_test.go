@@ -17,6 +17,9 @@ import (
 	"time"
 )
 
+//go语言强大的测试函数！
+
+// go test -run PartD -race 命令的作用是在当前目录下执行所有 _test.go 文件中，函数名包含 PartD 的测试函数，并且在执行过程中开启数据竞争检测。。
 // The tester generously allows solutions to complete elections in one second
 // (much more than the paper's range of timeouts).
 const RaftElectionTimeout = 1000 * time.Millisecond
