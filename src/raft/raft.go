@@ -59,8 +59,8 @@ const (
 // snapshots) on the applyCh, but set CommandValid to false for these
 // other uses.
 type ApplyMsg struct {
-	CommandValid bool
-	Command      interface{}
+	CommandValid bool        //用于指示该日志条目中的命令是否有效。
+	Command      interface{} //存储任何类型的数据
 	CommandIndex int
 
 	// For PartD:
@@ -91,14 +91,17 @@ type Raft struct {
 	// only used in Leader
 	// every peer's view
 	//PartA细节3 :
-	//这代表主节点中每一个从节点的视图
+	//这代表Leader 需要维护一个各个 Peer 的进度视图
 	//(也就是已匹配点、下一个待匹配点)
 	//主节点的第一件事就是对齐nextIndex，然后做一致性检查(复制)！
+	//这里存储着每一个节点的nextIndex、matchIndex
+	//Leader 正是依据此视图来决定给各个 Peer 发送多少日志。也是依据此视图，Leader 可以计算全局的 commitIndex。
+	
 	nextIndex  []int
 	matchIndex []int
 
 	// fields for apply loop
-	commitIndex int
+	commitIndex int //每个 Follower 收到 commitIndex 之后，再去 apply 本地的已提交日志到状态机。
 	lastApplied int
 	applyCh     chan ApplyMsg
 	snapPending bool
@@ -236,6 +239,7 @@ func (rf *Raft) killed() bool {
 	return z == 1
 }
 
+// 上下文是否丢失采用任期和角色是否相等来判断的
 func (rf *Raft) contextLostLocked(role Role, term int) bool {
 	return !(rf.currentTerm == term && rf.role == role)
 }
@@ -266,6 +270,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.log = NewLog(InvalidIndex, InvalidTerm, nil, nil)
 
 	// initialize the leader's view slice
+	//正式初始化后再成功当选为L后在开始
 	rf.nextIndex = make([]int, len(rf.peers))
 	rf.matchIndex = make([]int, len(rf.peers))
 

@@ -80,11 +80,13 @@ func (rl *RaftLog) at(logicIdx int) LogEntry {
 	return rl.tailLog[rl.idx(logicIdx)]
 }
 
+// 最后一条日志的下标和任期
 func (rl *RaftLog) last() (index, term int) {
 	i := len(rl.tailLog) - 1
 	return rl.snapLastIdx + i, rl.tailLog[i].Term
 }
 
+// snapshot后的对应任期的第一条日志下标
 func (rl *RaftLog) firstFor(term int) int {
 	for idx, entry := range rl.tailLog {
 		if entry.Term == term {
@@ -96,6 +98,7 @@ func (rl *RaftLog) firstFor(term int) int {
 	return InvalidIndex
 }
 
+// 这里是求的TailLog从指定下标开始到末尾的日志
 func (rl *RaftLog) tail(startIdx int) []LogEntry {
 	if startIdx >= rl.size() {
 		return nil

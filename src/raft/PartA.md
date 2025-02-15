@@ -1,7 +1,7 @@
 # 一句话:从节点向主节点收敛！
-
-## 1.如何转化为主节点？
-### 三种状态
+## 一、角色转换
+### 0.如何转化为主节点？
+### 1.三种状态
 Follower 从节点
 Candidate 候选节点
 Leader 主节点
@@ -87,3 +87,7 @@ commitIndex=0、nextIndex=log.size()
 2.1心跳循环。后台线程等间隔的发送心跳/复制日志replicationTicker
 2.2每次replicationTicker时，检测上下文，具体来说是检测自己还是不是当前的Leader，不是就立即退出loop
 ```
+
+## 二、心跳逻辑(收敛+压制)
+
+
