@@ -5,10 +5,11 @@ import "crypto/rand"
 import "math/big"
 
 type Clerk struct {
+	//存储的servers 列表，表示的是后端分布式 KV 服务的所有节点信息，我们可以通过这个信息去向指定的节点发送数据读写的请求。
 	servers []*labrpc.ClientEnd
 	// You will have to modify this struct.
 	leaderId int // 记录 Leader 节点的 id，避免下一次请求的时候去轮询查找 Leader
-	// clientID+seqId 确定一个唯一的命令
+	// clientID+seqId 确定一个唯一的命令=>详解？
 	clientId int64
 	seqId    int64
 }
@@ -51,6 +52,7 @@ func (ck *Clerk) Get(key string) string {
 		ok := ck.servers[ck.leaderId].Call("KVServer.Get", &args, &reply)
 		if !ok || reply.Err == ErrWrongLeader || reply.Err == ErrTimeout {
 			// 请求失败，选择另一个节点重试
+			//(注意一开始只能是轮询~后面才保留的LeaderId，才可以直接查找)
 			ck.leaderId = (ck.leaderId + 1) % len(ck.servers)
 			continue
 		}
@@ -86,11 +88,12 @@ func (ck *Clerk) PutAppend(key string, value string, op string) {
 			continue
 		}
 		// 调用成功，返回
-		ck.seqId++
+		ck.seqId++ //这里的序列号是指？
 		return
 	}
 }
 
+// 这里合二(put-append)操作为一，并且根据op参数来选择不同操作而已！
 func (ck *Clerk) Put(key string, value string) {
 	ck.PutAppend(key, value, "Put")
 }

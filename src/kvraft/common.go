@@ -36,6 +36,7 @@ type GetArgs struct {
 	// You'll have to add definitions here.
 }
 
+// 返回查询结果的结构体
 type GetReply struct {
 	Err   Err
 	Value string

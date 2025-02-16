@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="64e75539-9a8b-4ca8-9e93-7fabd054a3f9" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.check-build" beforeDir="false" afterPath="$PROJECT_DIR$/.check-build" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/kvraft/client.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/kvraft/client.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/kvraft/common.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/kvraft/common.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tools/dslogs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tools/dslogs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tools/dstest" beforeDir="false" afterPath="$PROJECT_DIR$/src/tools/dstest" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Go File" />
+        <option value="Go Application" />
+      </list>
+    </option>
+  </component>
+  <component name="GOROOT" url="file://$PROJECT_DIR$/../../../../../4environment/go" />
+  <component name="Git.Settings">
+    <favorite-branches>
+      <branch-storage>
+        <map>
+          <entry type="LOCAL">
+            <value>
+              <list>
+                <branch-info repo="$PROJECT_DIR$" source="example" />
+                <branch-info repo="$PROJECT_DIR$" source="shardkv" />
+              </list>
+            </value>
+          </entry>
+        </map>
+      </branch-storage>
+    </favorite-branches>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="jfyavbuh" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
+  <component name="ProjectId" id="2Z5D0BGvXU6gazmuelJM2sxQM3q" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="1" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultGoTemplateProperty": "Go Application",
+    "Go Build.go build course/test.executor": "Run",
+    "Go Test.TestBasic in course/labrpc.executor": "Run",
+    "Go Test.TestBytes in course/labrpc.executor": "Run",
+    "Go Test.TestDisconnect in course/labrpc.executor": "Run",
+    "Go Test.TestGOB in course/labgob.executor": "Run",
+    "Go Test.TestInitialElectionPartA in course/raft.executor": "Run",
+    "Go Test.TestReElectionPartA in course/raft.executor": "Run",
+    "Go Test.TestTypes in course/labrpc.executor": "Run",
+    "Go Test.go test course/labrpc.executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.go.formatter.settings.were.checked": "true",
+    "RunOnceActivity.go.migrated.go.modules.settings": "true",
+    "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "git-widget-placeholder": "example",
+    "go.import.settings.migrated": "true",
+    "go.sdk.automatically.set": "true",
+    "last_opened_file_path": "D:/1code/钢琴学习",
+    "node.js.detected.package.eslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "preferences.editor"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/shardkv" />
+      <recent name="$PROJECT_DIR$/src/shardctrler" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\1code\go\raftnew\raft-course\raft-course\src\raft" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Go Test.TestInitialElectionPartA in course/raft">
+    <configuration default="true" type="JetRunConfigurationType">
+      <module name="raft-course" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
+      <module name="raft-course" />
+      <option name="filePath" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="GoApplicationRunConfiguration" factoryName="Go Application">
+      <module name="raft-course" />
+      <working_directory value="$PROJECT_DIR$" />
+      <kind value="FILE" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestBytes in course/labrpc" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="raft-course" />
+      <working_directory value="$PROJECT_DIR$/src/labrpc" />
+      <root_directory value="$PROJECT_DIR$/src" />
+      <kind value="PACKAGE" />
+      <package value="course/labrpc" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestBytes\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestDisconnect in course/labrpc" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="raft-course" />
+      <working_directory value="$PROJECT_DIR$/src/labrpc" />
+      <root_directory value="$PROJECT_DIR$/src" />
+      <kind value="PACKAGE" />
+      <package value="course/labrpc" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestDisconnect\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestInitialElectionPartA in course/raft" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="raft-course" />
+      <working_directory value="$PROJECT_DIR$/src/raft" />
+      <root_directory value="$PROJECT_DIR$/src" />
+      <kind value="PACKAGE" />
+      <package value="course/raft" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestInitialElectionPartA\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestReElectionPartA in course/raft" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="raft-course" />
+      <working_directory value="$PROJECT_DIR$/src/raft" />
+      <root_directory value="$PROJECT_DIR$/src" />
+      <kind value="PACKAGE" />
+      <package value="course/raft" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestReElectionPartA\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="GoTestRunConfiguration" factoryName="Go Test">
+      <module name="raft-course" />
+      <working_directory value="$PROJECT_DIR$" />
+      <kind value="DIRECTORY" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go test course/labrpc" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="raft-course" />
+      <working_directory value="$PROJECT_DIR$/src/labrpc" />
+      <root_directory value="$PROJECT_DIR$/src" />
+      <kind value="PACKAGE" />
+      <package value="course/labrpc" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Go Test.TestInitialElectionPartA in course/raft" />
+        <item itemvalue="Go Test.TestReElectionPartA in course/raft" />
+        <item itemvalue="Go Test.go test course/labrpc" />
+        <item itemvalue="Go Test.TestBytes in course/labrpc" />
+        <item itemvalue="Go Test.TestDisconnect in course/labrpc" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-gosdk-d297c17c1fbd-85c80fddc9a6-org.jetbrains.plugins.go.sharedIndexes.bundled-GO-243.23654.166" />
+        <option value="bundled-js-predefined-d6986cc7102b-822845ee3bb5-JavaScript-GO-243.23654.166" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="64e75539-9a8b-4ca8-9e93-7fabd054a3f9" name="Changes" comment="" />
+      <created>1701702820185</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1701702820185</updated>
+      <workItem from="1701702821320" duration="36672000" />
+      <workItem from="1703305582075" duration="54000" />
+      <workItem from="1703305651905" duration="14000" />
+      <workItem from="1703305673018" duration="23000" />
+      <workItem from="1703305816564" duration="56000" />
+      <workItem from="1703411868224" duration="14000" />
+      <workItem from="1703411930531" duration="17000" />
+      <workItem from="1703411961111" duration="30000" />
+      <workItem from="1703412010405" duration="82000" />
+      <workItem from="1703412111052" duration="24000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VgoProject">
+    <settings-migrated>true</settings-migrated>
+  </component>
+</project>
