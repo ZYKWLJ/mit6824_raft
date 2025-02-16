@@ -10,8 +10,8 @@ type Clerk struct {
 	// You will have to modify this struct.
 	leaderId int // 记录 Leader 节点的 id，避免下一次请求的时候去轮询查找 Leader
 	// clientID+seqId 确定一个唯一的命令=>详解？
-	clientId int64
-	seqId    int64
+	clientId int64 //表示客户端的唯一标识符，用于区分不同的客户端。
+	seqId    int64 //表示客户端请求的序列号，用于标识客户端发出的每个请求的顺序。
 }
 
 func nrand() int64 {
@@ -87,8 +87,8 @@ func (ck *Clerk) PutAppend(key string, value string, op string) {
 			ck.leaderId = (ck.leaderId + 1) % len(ck.servers)
 			continue
 		}
-		// 调用成功，返回
-		ck.seqId++ //这里的序列号是指？
+		// 调用成功时，返回
+		ck.seqId++ //这里的序列号是指每一个客户端的每一个命令都用一个序列号来标识
 		return
 	}
 }

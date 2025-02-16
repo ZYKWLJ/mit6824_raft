@@ -58,15 +58,15 @@ const (
 // snapshots) on the applyCh, but set CommandValid to false for these
 // other uses.
 type ApplyMsg struct {
-	CommandValid bool
-	Command      interface{}
+	CommandValid bool        // true表示 ApplyMsg 包含一个新的提交的日志条目。
+	Command      interface{} //可以表示任意结构体的！
 	CommandIndex int
 
 	// For PartD:
-	SnapshotValid bool
+	SnapshotValid bool //快照是否有效
 	Snapshot      []byte
 	SnapshotTerm  int
-	SnapshotIndex int
+	SnapshotIndex int //快照的最后的下标
 }
 
 // A Go object implementing a single Raft peer.
@@ -175,6 +175,7 @@ func (rf *Raft) GetRaftStateSize() int {
 // if it's ever committed. the second return value is the current
 // term. the third return value is true if this server believes it is
 // the leader.
+// 这是外部应用层调用的Raft集群的入口~
 func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()

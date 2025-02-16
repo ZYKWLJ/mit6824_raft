@@ -42,6 +42,7 @@ func (ps *Persister) ReadRaftState() []byte {
 	return clone(ps.raftstate)
 }
 
+// 这是返回的 Raft 状态数据的大小。
 func (ps *Persister) RaftStateSize() int {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()

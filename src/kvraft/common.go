@@ -64,11 +64,13 @@ type Op struct {
 	SeqId    int64
 }
 
+// 结果结构体定义
 type OpReply struct {
 	Value string
 	Err   Err
 }
 
+// 定义一个枚举表示我们操作的类型
 type OperationType uint8
 
 const (
@@ -88,6 +90,7 @@ func getOperationType(v string) OperationType {
 	}
 }
 
+// 记录最后一次操作的信息，防止重复请求
 type LastOperationInfo struct {
 	SeqId int64
 	Reply *OpReply
