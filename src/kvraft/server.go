@@ -20,7 +20,7 @@ type KVServer struct {
 	applyCh chan raft.ApplyMsg //这里定义一个存放日志信息(快照)的通道
 	dead    int32              // set by Kill()
 
-	maxraftstate int // snapshot if log grows this size(达到了这个尺寸就快照)阈值设置
+	maxraftstate int // snapshot if log grows this size(达到了这个尺寸就快照)阈值设置。防止重启时单个单个加载日志，使用压缩的snapshot会大幅减少耗时！
 
 	// Your definitions here.
 	lastApplied    int
@@ -226,7 +226,7 @@ func (kv *KVServer) applyTask() {
 
 				// 判断是否需要 snapshot
 				//kv.maxraftstate != -1 是为了确保启用了基于状态大小的快照机制。
-				//判断当前 Raft 状态数据的大小是否已经达到或超过了预设的阈值 kv.maxraftstate
+				//判断当前 Raft 状态数据的大小是否已经达到或超过了预设的阈值 kv.maxraftstate，超过了就压缩快照，减少IO开销~
 				if kv.maxraftstate != -1 && kv.rf.GetRaftStateSize() >= kv.maxraftstate {
 					kv.makeSnapshot(message.CommandIndex)
 				}
