@@ -23,8 +23,9 @@ type KVServer struct {
 	maxraftstate int // snapshot if log grows this size(达到了这个尺寸就快照)阈值设置。防止重启时单个单个加载日志，使用压缩的snapshot会大幅减少耗时！
 
 	// Your definitions here.
-	lastApplied    int
-	stateMachine   *MemoryKVStateMachine
+	lastApplied  int
+	stateMachine *MemoryKVStateMachine
+	//这里本质就是哈希表，只不过key=commitIndex(提交给Raft集群的下标) ,value=chan(里面存放数据)
 	notifyChans    map[int]chan *OpReply       //这里是为每一个Index创建一个channal，里面存储着信息。使用映射创建！
 	duplicateTable map[int64]LastOperationInfo //去重表，用于防止重复请求。key是最后一个请求的ID。
 }
