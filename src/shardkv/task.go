@@ -5,7 +5,8 @@ import (
 	"time"
 )
 
-// 处理 apply 任务
+// 处理 apply的常驻线程任务
+// 这里就是判断如果集群的多数实例提交了相应日志，主节点就会将日志apply到状态机中
 func (kv *ShardKV) applyTask() {
 	for !kv.killed() {
 		select {

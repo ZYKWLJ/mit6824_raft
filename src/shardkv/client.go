@@ -69,13 +69,13 @@ func MakeClerk(ctrlers []*labrpc.ClientEnd, make_end func(string) *labrpc.Client
 func (ck *Clerk) Get(key string) string {
 	args := GetArgs{}
 	args.Key = key
-
+	//需要通过key拿到shard，在通过shard得到GroupId，再在集群中进行数据同步！
 	for {
 		shard := key2shard(key)
 		gid := ck.config.Shards[shard]
 		if servers, ok := ck.config.Groups[gid]; ok {
 			// try each server for the shard.
-			if _, exist := ck.leaderIds[gid]; !exist {
+			if _, exist := ck.leaderIds[gid]; !exist { //与集群的Leader建立连接
 				ck.leaderIds[gid] = 0
 			}
 			oldLeaderId := ck.leaderIds[gid]
@@ -85,6 +85,7 @@ func (ck *Clerk) Get(key string) string {
 				var reply GetReply
 				ok := srv.Call("ShardKV.Get", &args, &reply)
 				if ok && (reply.Err == OK || reply.Err == ErrNoKey) {
+					//返回通过RPC查询得到的结果
 					return reply.Value
 				}
 				if ok && (reply.Err == ErrWrongGroup) {
