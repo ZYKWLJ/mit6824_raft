@@ -19,9 +19,10 @@ type ShardCtrler struct {
 
 	configs []Config // indexed by config num
 
-	dead           int32 // set by Kill()
-	lastApplied    int
-	stateMachine   *CtrlerStateMachine
+	dead         int32 // set by Kill()
+	lastApplied  int
+	stateMachine *CtrlerStateMachine
+	//针对每一个Index的Group保存的配置信息
 	notifyChans    map[int]chan *OpReply
 	duplicateTable map[int64]LastOperationInfo
 }
@@ -34,6 +35,7 @@ func (sc *ShardCtrler) requestDuplicated(clientId, seqId int64) bool {
 func (sc *ShardCtrler) Join(args *JoinArgs, reply *JoinReply) {
 	// Your code here.
 	var opReply OpReply
+	//对哪个集群的负责的那几个sever进行操作，并且操作序列的客户端和命令ID存入日志中
 	sc.command(Op{
 		OpType:   OpJoin,
 		ClientId: args.ClientId,
@@ -83,8 +85,10 @@ func (sc *ShardCtrler) Query(args *QueryArgs, reply *QueryReply) {
 	reply.Err = opReply.Err
 }
 
+// 对配置集群的操作的分类
 func (sc *ShardCtrler) command(args Op, reply *OpReply) {
 	sc.mu.Lock()
+	//保证线性一致性，防止数据覆盖与数据重复访问IO消耗(非查询操作的重复进行导致数据覆盖！)
 	if args.OpType != OpQuery && sc.requestDuplicated(args.ClientId, args.SeqId) {
 		// 如果是重复请求，直接返回结果
 		opReply := sc.duplicateTable[args.ClientId].Reply
@@ -102,7 +106,7 @@ func (sc *ShardCtrler) command(args Op, reply *OpReply) {
 		return
 	}
 
-	// 等待结果
+	// 等待结果，得到配置信息
 	sc.mu.Lock()
 	notifyCh := sc.getNotifyChannel(index)
 	sc.mu.Unlock()

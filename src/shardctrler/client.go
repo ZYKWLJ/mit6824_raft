@@ -8,6 +8,7 @@ import "course/labrpc"
 import "crypto/rand"
 import "math/big"
 
+// 配置集群的客户端，即为访问配置集群服务的外露接口
 type Clerk struct {
 	servers []*labrpc.ClientEnd
 	// Your data here.
@@ -23,8 +24,9 @@ func nrand() int64 {
 	return x
 }
 
+// 客户端的初始化
 func MakeClerk(servers []*labrpc.ClientEnd) *Clerk {
-	ck := new(Clerk)
+	ck := new(Clerk) //new 一个客户端
 	ck.servers = servers
 	// Your code here.
 	ck.leaderId = 0
@@ -45,6 +47,7 @@ func (ck *Clerk) Query(num int) Config {
 			ck.leaderId = (ck.leaderId + 1) % len(ck.servers)
 			continue
 		}
+		//返回最新的配置信息
 		return reply.Config
 	}
 }
@@ -61,11 +64,12 @@ func (ck *Clerk) Join(servers map[int][]string) {
 			ck.leaderId = (ck.leaderId + 1) % len(ck.servers)
 			continue
 		}
-		ck.seqId++
+		ck.seqId++ //这里对数据有更改，需要进行持久化，所以保存了唯一的数据序列号
 		return
 	}
 }
 
+// 参数是一个集群中的 Group ID，表示这些 Group 退出了分布式集群
 func (ck *Clerk) Leave(gids []int) {
 	args := &LeaveArgs{ClientId: ck.clientId, SeqId: ck.seqId}
 	// Your code here.

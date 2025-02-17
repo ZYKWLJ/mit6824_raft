@@ -27,10 +27,11 @@ const NShards = 10
 
 // Config A configuration -- an assignment of shards to groups.
 // Please don't change this.
+// 保存着每一个集群的配置信息
 type Config struct {
 	Num    int              // config number
 	Shards [NShards]int     // shard -> gid
-	Groups map[int][]string // gid -> servers[]
+	Groups map[int][]string // gid -> servers[] Group这里表示每一个后端的Raft服务是什么？
 }
 
 func DefaultConfig() Config {
@@ -103,6 +104,7 @@ func DPrintf(format string, a ...interface{}) (n int, err error) {
 	return
 }
 
+// 对这个配置集群的 操作分类
 type Op struct {
 	// Your definitions here.
 	// Field names must start with capital letters,
@@ -117,6 +119,7 @@ type Op struct {
 	SeqId    int64
 }
 
+// 获取配置信息的结果
 type OpReply struct {
 	ControllerConfig Config
 	Err              Err

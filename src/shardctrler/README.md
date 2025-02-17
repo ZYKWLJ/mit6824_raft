@@ -16,7 +16,7 @@ Shardctrler 存储的配置信息，实际上是多个带编号的配置组合�
 
 Join 方法: 添加新的 Group，它的参数是一个 map，存储了 **Replica Group 的唯一标识 GID 到服务节点名字列表的映射关系**。
 
-Leave 方法: 参数是一组集群中的 **Group ID，表示这些 Group 退出了分布式集群**。
+Leave 方法: 参数是一个集群中的 **Group ID，表示这些 Group 退出了分布式集群**。
 
 Move 方法: 参数是一个 shard 编号和一个 Group ID。主要是用于**将一个 shard 移动到指定的 Group 中**。
 
