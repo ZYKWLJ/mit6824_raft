@@ -56,35 +56,35 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultGoTemplateProperty": "Go Application",
-    "Go Build.go build course/test.executor": "Run",
-    "Go Test.TestBasic in course/labrpc.executor": "Run",
-    "Go Test.TestBytes in course/labrpc.executor": "Run",
-    "Go Test.TestDisconnect in course/labrpc.executor": "Run",
-    "Go Test.TestGOB in course/labgob.executor": "Run",
-    "Go Test.TestInitialElectionPartA in course/raft.executor": "Run",
-    "Go Test.TestReElectionPartA in course/raft.executor": "Run",
-    "Go Test.TestTypes in course/labrpc.executor": "Run",
-    "Go Test.go test course/labrpc.executor": "Run",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.go.formatter.settings.were.checked": "true",
-    "RunOnceActivity.go.migrated.go.modules.settings": "true",
-    "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "git-widget-placeholder": "example",
-    "go.import.settings.migrated": "true",
-    "go.sdk.automatically.set": "true",
-    "last_opened_file_path": "D:/1code/钢琴学习",
-    "node.js.detected.package.eslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "preferences.editor"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultGoTemplateProperty&quot;: &quot;Go Application&quot;,
+    &quot;Go Build.go build course/test.executor&quot;: &quot;Run&quot;,
+    &quot;Go Test.TestBasic in course/labrpc.executor&quot;: &quot;Run&quot;,
+    &quot;Go Test.TestBytes in course/labrpc.executor&quot;: &quot;Run&quot;,
+    &quot;Go Test.TestDisconnect in course/labrpc.executor&quot;: &quot;Run&quot;,
+    &quot;Go Test.TestGOB in course/labgob.executor&quot;: &quot;Run&quot;,
+    &quot;Go Test.TestInitialElectionPartA in course/raft.executor&quot;: &quot;Run&quot;,
+    &quot;Go Test.TestReElectionPartA in course/raft.executor&quot;: &quot;Run&quot;,
+    &quot;Go Test.TestTypes in course/labrpc.executor&quot;: &quot;Run&quot;,
+    &quot;Go Test.go test course/labrpc.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.migrated.go.modules.settings&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.modules.go.list.on.any.changes.was.set&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;example&quot;,
+    &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
+    &quot;go.sdk.automatically.set&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/1code/钢琴学习&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.editor&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/src/shardkv" />
