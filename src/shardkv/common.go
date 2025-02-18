@@ -122,6 +122,8 @@ func (op *LastOperationInfo) copyData() LastOperationInfo {
 
 type RaftCommandType uint8
 
+// 定义对分片数据配置信息操作的类型
+// 这里将客户端的对Raft集群的命令与对配置集群的操作统一了
 const (
 	ClientOpeartion RaftCommandType = iota
 	ConfigChange

@@ -7,8 +7,6 @@
     <list default="true" id="64e75539-9a8b-4ca8-9e93-7fabd054a3f9" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/shardkv/common.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/shardkv/common.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shardkv/conf_change.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/shardkv/conf_change.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shardkv/task.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/shardkv/task.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
