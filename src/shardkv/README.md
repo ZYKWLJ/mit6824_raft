@@ -13,3 +13,14 @@
 但是当前 Group 又要修改这个 shard 的数据，那么就会产生竞态条件。一种解决方案是传输 map 结构的时候将其拷贝一份。
 
 ![img.png](多集群高可用的K-V数据库系统.png)
+
+### 分片就四种操作状态：
+正常、移入、移出、待清理
+```
+const (
+Normal ShardStatus = iota
+MoveIn
+MoveOut
+GC
+)
+```
