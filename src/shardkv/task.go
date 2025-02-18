@@ -71,6 +71,7 @@ func (kv *ShardKV) fetchConfigTask() {
 			kv.mu.Unlock()
 
 			if needFetch {
+				//这里是获取的下一个集群的配置，并且按照顺序处理。防止相互依赖的任务之间的覆盖问题！
 				newConfig := kv.mck.Query(currentNum + 1)
 				// 传入 raft 模块进行同步
 				if newConfig.Num == currentNum+1 {

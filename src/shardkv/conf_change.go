@@ -53,7 +53,9 @@ func (kv *ShardKV) handleConfigChangeMessage(command RaftCommand) *OpReply {
 
 func (kv *ShardKV) applyNewConfig(newConfig shardctrler.Config) *OpReply {
 	if kv.currentConfig.Num+1 == newConfig.Num {
+		// 遍历我们全部shard的状态
 		for i := 0; i < shardctrler.NShards; i++ {
+			//在当前的shard中这个配置不属于我们的group，但是在新的配置中shard属于，所以需要迁移进来
 			if kv.currentConfig.Shards[i] != kv.gid && newConfig.Shards[i] == kv.gid {
 				//	shard 需要迁移进来
 				gid := kv.currentConfig.Shards[i]
@@ -61,6 +63,7 @@ func (kv *ShardKV) applyNewConfig(newConfig shardctrler.Config) *OpReply {
 					kv.shards[i].Status = MoveIn
 				}
 			}
+			//在当前的shard中这个配置属于我们的group，但是在新的配置中shard不属于，所以需要迁移出去
 			if kv.currentConfig.Shards[i] == kv.gid && newConfig.Shards[i] != kv.gid {
 				// shard 需要迁移出去
 				gid := newConfig.Shards[i]

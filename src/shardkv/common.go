@@ -129,6 +129,7 @@ const (
 	ShardGC
 )
 
+// 为客户端与配置集群新增的操作类型
 type RaftCommand struct {
 	CmdType RaftCommandType
 	Data    interface{}
